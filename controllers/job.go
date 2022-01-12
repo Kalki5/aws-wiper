@@ -1,57 +1,76 @@
 package controllers
 
 import (
+	. "aws-wiper/types"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
-// GET /jobs
 // List all the jobs
 func ListJobs(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"data": "data"})
+	jobs := JobList.ListJobs()
+	transformedJobs := make([]Map, 0, len(jobs))
+	for _, j := range jobs {
+		transformedJobs = append(transformedJobs, j.ToMapMini())
+	}
+	c.JSON(http.StatusOK, Map{"jobs": transformedJobs})
 }
 
-// GET /jobs/:id
 // Get the status of a Job
 func GetJob(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"data": "data " + c.Param("id")})
-}
-
-// POST /jobs
-// Create a new Job
-func CreateJob(c *gin.Context) {
-	var input struct {
-		Id   string `json:"id" binding:"required"`
-		Name string `json:"name" binding:"required"`
-	}
-	id := uuid.New().String()
-
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	job, err := JobList.GetJob(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, transformError(err))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": "data" + id})
+	c.JSON(http.StatusOK, job.ToMap())
 }
 
-// PUT /jobs/:id
+// Create a new Job
+func CreateJob(c *gin.Context) {
+	var jobParam JobParam
+	if err := c.ShouldBindJSON(&jobParam); err != nil {
+		c.JSON(http.StatusBadRequest, transformError(err))
+		return
+	}
+
+	job, err := NewJob(jobParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, transformError(err))
+		return
+	}
+	JobList.AddJob(job)
+
+	c.JSON(http.StatusOK, job.ToMap())
+}
+
 // Update a Job's Status
 func UpdateJob(c *gin.Context) {
 	var input struct {
-		Id     string `json:"id"`
-		Status string `json:"status" binding:"required"`
+		Action string `json:"action" binding:"required,oneof=pause resume"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, transformError(err))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": "data " + c.Param("id")})
+
+	job, err := JobList.UpdateJob(c.Param("id"), input.Action)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, transformError(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, job.ToMap())
 }
 
-// DELETE /jobs/:id
 // Delete an existing Job
 func DeleteJob(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"data": "data " + c.Param("id")})
+	job, err := JobList.DeleteJob(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, transformError(err))
+		return
+	}
+	c.JSON(http.StatusOK, job.ToMap())
 }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"aws-wiper/controllers"
+	c "aws-wiper/controllers"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,9 +11,9 @@ func InitRoutes(r *gin.RouterGroup) {
 		c.JSON(200, gin.H{"message": "Hello World"})
 	})
 
-	r.GET("/jobs", controllers.ListJobs)
-	r.GET("/jobs/:id", controllers.GetJob)
-	r.POST("/jobs", controllers.CreateJob)
-	r.PUT("/jobs/:id", controllers.UpdateJob)
-	r.DELETE("/jobs/:id", controllers.DeleteJob)
+	r.GET("/jobs", c.ListJobs)
+	r.GET("/jobs/:id", c.GetJob)
+	r.POST("/jobs", c.CreateJob)
+	r.PUT("/jobs/:id", c.UpdateJob)
+	r.DELETE("/jobs/:id", c.DeleteJob)
 }
